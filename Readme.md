@@ -57,7 +57,7 @@ The folders of this repository are organized as follows:
 
 * `images`: figures shown in readme
 * `systolic_example`: example of a small problem, where whole matrices fit in the systolic
-* `tiled_example`: example of a real-world application using systolic array smaller than the matrix dimensions
+* `tiled_systolic_example`: example of a real-world application using systolic array smaller than the matrix dimensions
 
 
 
