@@ -5,7 +5,6 @@
 #include "ac_channel.h"
 #include "mc_scverify.h"
 
-typedef float dtype;
 typedef ffp16b btype;
 
 // size of the problem (matrix dimensions)
@@ -21,7 +20,6 @@ static const int M = 4;
 // number of non-zero elements of the sparse matrix
 static const int nZ = 8;
 
-static const dtype r_max = 4;
 static const int low = -10;
 static const int high = 10;
 

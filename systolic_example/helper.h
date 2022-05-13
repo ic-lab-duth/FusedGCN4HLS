@@ -1,10 +1,19 @@
 #include <iostream>
-
+#include "defs.h"
 
 template <typename Type, int N>
 void print1d (Type a[N]) {
   for (int i=0; i < N; i++) {
     std::cout << a[i] << "\t";
+  }
+  std::cout << std::endl;
+}
+
+
+template <int N>
+void print1d (btype a[N]) {
+  for (int i=0; i < N; i++) {
+    std::cout << a[i].to_float() << "\t";
   }
   std::cout << std::endl;
 }
@@ -119,8 +128,6 @@ void read_adj(std::vector<int> &a_row, std::vector<int> &a_col, std::vector<Type
 template < typename Type, int N, int M, int nZ>
 void encode_csr(Type a[N][M], int a_row[N+1], int a_col[nZ], Type a_val[nZ]){
   int cnt = 0;
-  // btype temp;
-  // temp = (float)0;
 
   for (int i=0; i < N; i++) {
     

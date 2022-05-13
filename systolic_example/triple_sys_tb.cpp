@@ -18,7 +18,7 @@
 
 CCS_MAIN(int argc, char** argv) {
 
-  triple_sys< btype, K, M, I_B, O_B, MEM > sys_array;
+  triple_sys< btype, N, I_F, O_F1, O_F2, nZ, K, M, I_B, O_B, MEM > gcn;
 
   // number of vertical and horizontal tiles of weight matrix for the first layer
   const int ver = ((I_F%K)==0) ? (I_F/K) : (I_F/K)+1;
@@ -55,13 +55,11 @@ CCS_MAIN(int argc, char** argv) {
     btype temp;
     temp = 0.0;
     if (a[row][col]==temp){
-      a[row][col] = low + static_cast<dtype>(rand()) * static_cast<dtype>(high - low) / RAND_MAX;
+      a[row][col] = low + static_cast<float>(rand()) * static_cast<float>(high - low) / RAND_MAX;
       t++;
     }
   }
 
-  print2d<N,N> (a);
-  std::cout << "===========================================" <<std::endl;
   encode_csr<btype, N, N, nZ>(a, a_row, a_col, a_val);
   
   for (int i=0; i < N+1; i++) {
@@ -70,34 +68,32 @@ CCS_MAIN(int argc, char** argv) {
   
   for (int i=0; i < nZ; i++) {
     a_col[i] = i;
-    a_val[i] = (dtype)1;
+    a_val[i] = (float)1;
   }
   
   for (int i=0; i < N; i++) {
     for (int j=0; j < I_F; j++) {
-      h[i][j] = low + static_cast<dtype>(rand()) * static_cast<dtype>(high - low) / RAND_MAX;
+      h[i][j] = low + static_cast<float>(rand()) * static_cast<float>(high - low) / RAND_MAX;
     }
   }
   
   for (int i=0; i < I_F; i++) {
     for (int j=0; j < O_F1; j++) {
-      w1[i][j] = low + static_cast<dtype>(rand()) * static_cast<dtype>(high - low) / RAND_MAX;
+      w1[i][j] = low + static_cast<float>(rand()) * static_cast<float>(high - low) / RAND_MAX;
     }
   }
 
   for (int i=0; i < O_F1; i++) {
     for (int j=0; j < O_F2; j++) {
-      w2[i][j] = low + static_cast<dtype>(rand()) * static_cast<dtype>(high - low) / RAND_MAX;
+      w2[i][j] = low + static_cast<float>(rand()) * static_cast<float>(high - low) / RAND_MAX;
     }
   }
 
-  btype h_o[N][O_F1];
   btype final[N][O_F2];
 
-  ac_channel<btype> loadW[K];
+  ac_channel<btype> loadW1[K];
   
   // first GCN layer
-  std::cout << "Executing first GCN layer..." << std::endl;
   int part_K = K;
   int part_M = M;
   
@@ -121,7 +117,7 @@ CCS_MAIN(int argc, char** argv) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
             if (j < part_M) {
-              loadW[i].write(w1[(p*K)+i][(q*M)+j]);
+              loadW1[i].write(w1[(p*K)+i][(q*M)+j]);
             }
           }
         }
@@ -129,63 +125,8 @@ CCS_MAIN(int argc, char** argv) {
     }
   }
   
-
-  //initialize output
-  for (int i=0; i < N; i++) {
-    for (int j=0; j < O_F1; j++) {
-      h_o[i][j] = (btype)0;
-    }
-  }
-
-  bool change_row;
-  bool last_layer = false;
-  bool apply_activation;
-  
-  int lambda;
-  btype a_lambda;
-
-  btype in_row[I_B];
-  btype out_row[O_B];
-
-  // load weights to PEs
-  sys_array.systolic_top(a_lambda, in_row, loadW, out_row, I_F, O_F1, ver, hor, true, true, false, false);
-
-  // push different tiles in the systolic array
-  ITER: for (int i=0; i < N; i++) {
-    change_row = true;
-
-    INTER_ROW_ITER: for (int j=a_row[i]; j < a_row[i+1]; j++) {
-      lambda = a_col[j];
-      a_lambda = a_val[j];
-      
-      for (int k=0; k < I_B; k++) {
-        if (k < I_F)
-          in_row[k] = h[lambda][k];
-        else
-          in_row[k] = (btype)0;
-      }
-      
-      if(j==a_row[i+1]-1)
-        apply_activation = true;
-
-      sys_array.systolic_top(a_lambda, in_row, loadW, out_row, I_F, O_F1, ver, hor, false, change_row, last_layer, apply_activation);
-      change_row = false;
-      apply_activation = false;
-
-    }
-    
-    WR_OUT: for (int j=0; j < O_F1; j++) {
-      // write the output
-      h_o[i][j] = out_row[j];
-    }
-    
-  }
-
-  print2d<N, O_F1> (h_o);
-  std::cout << "===========================================" <<std::endl;
-
   // second GCN layer
-  std::cout << "Executing second GCN layer..." << std::endl;
+  ac_channel<btype> loadW2[K];
   
   // write weights to appropriate channels to store correct in each PE
   for (int p=0; p < ver2; p++) {
@@ -207,7 +148,7 @@ CCS_MAIN(int argc, char** argv) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
             if (j < part_M) {
-              loadW[i].write(w2[(p*K)+i][(q*M)+j]);
+              loadW2[i].write(w2[(p*K)+i][(q*M)+j]);
             }
           }
         }
@@ -223,42 +164,9 @@ CCS_MAIN(int argc, char** argv) {
     }
   }
 
-  last_layer = true;
+  gcn.run(a_row, a_col, a_val, h, loadW1, loadW2, final);
 
-  // load weights to PEs
-  sys_array.systolic_top(a_lambda, in_row, loadW, out_row, O_F1, O_F2, ver, hor, true, true, false, false);
-
-  // push different tiles in the systolic array
-  ITER_2: for (int i=0; i < N; i++) {
-    change_row = true;
-
-    INTER_ROW_ITER_2: for (int j=a_row[i]; j < a_row[i+1]; j++) {
-      lambda = a_col[j];
-      a_lambda = a_val[j];
-      
-      for (int k=0; k < I_B; k++) {
-        if (k < O_F1)
-          in_row[k] = h_o[lambda][k];
-        else
-          in_row[k] = (btype)0;
-      }
-
-      if(j==a_row[i+1]-1)
-        apply_activation = true;
-
-      sys_array.systolic_top(a_lambda, in_row, loadW, out_row, O_F1, O_F2, ver, hor, false, change_row, last_layer, apply_activation);
-      change_row = false;
-      apply_activation = false;
-
-    }
-    
-    WR_OUT_2: for (int j=0; j < O_F2; j++) {
-      // write the output
-      final[i][j] = out_row[j];
-    }
-    
-  }
-
+  std::cout << "===========================================" <<std::endl;
   print2d<N, O_F2> (final);
   std::cout << "===========================================" <<std::endl;
 
