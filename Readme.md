@@ -27,7 +27,8 @@ for (int i = 0; i < N; i++) //temporal
 ```
 
 Adjacency matrices of real-world graphs are extremely sparse. A simple example of a normalized adjacency matrix in CSR format is shown in the following figure.
-<img src="images/csr-example.jpg" alt="CSR example" style="align: left; width: 438px; height: auto;" />
+
+ <img src="images/csr-example.jpg" alt="CSR example" style="align: left; width: 438px; height: auto;" />
 
 To transform the fused three-matrix multiplication to operate directly on CSR representation, we need to replace the instances of s[i]\[j] in the previous code block with the corresponding CSR representation of the non-zero elements of S.
 ```c++
@@ -39,10 +40,12 @@ for (int i = 0; i < N; i++) //temporal
 ```
 
 The outer loop passes through all the rows of matrix S (each node of the graph is visited once). The non-zero elements of a selected row of S (row 2 in the following figure) with value S_val[j] are multiplied with all the elements of the row of H that corresponds to the column S_col[j]. The product derived for each non-zero element is multiplied with all columns of W to produce a complete row of the output. Since S is sparse, only selected rows of H are fetched: the ones that correspond to the columns of the non-zero elements of S.
-<img src="images/sparse-fused-matrix-mult.jpg" alt="Sparse multiplication example" style="align: left; width: 500px; height: auto;" />
+
+ <img src="images/sparse-fused-matrix-mult.jpg" alt="Sparse multiplication example" style="align: left; width: 500px; height: auto;" />
 
 In FusedGCN, we adopt a weight-stationary systolic array philosophy, whereby the weight matrix of a convolution layer is pre-loaded and reused for computing the convolution of all nodes of the graph. The computation for the i-th output row is split in N steps executed serially in time, but in a pipelined fashion. The same steps are performed in parallel for all elements that belong to the same output row, using the following systolic array.
-<img src="images/fused-systolic.jpg" alt="Fused systolic" style="align: left; width: 500px; height: auto;" />
+
+ <img src="images/fused-systolic.jpg" alt="Fused systolic" style="align: left; width: 500px; height: auto;" />
 
 In each cycle, we take one non-zero element of S with value S_val[j] and multiply it in parallel with all elements of the corresponding row of matrix H (selected by S_col[j]). The output of the multipliers is then multiplied (dot product) in parallel with all columns of the weight matrix by the systolic array. Each processing element of the systolic array multiplies the broadcast value with the locally-saved weight and adds to this product the output of the above processing element of the same column. Once summation is completed, it forwards the result to the next processing element of the same column in the next cycle.
 
@@ -51,7 +54,8 @@ The partial result computed at the output of each column of the systolic array f
 In real-world applications it is infeasible to fetch a whole row of H from memory in a single cycle. Thus, a row of H would be fetched in multiple segments/partitions, over consecutive clock cycles. The same limitation exists on the output side, i.e., when trying to write in memory a computed row of the output H<sup>*</sup>. In most practical cases, the computed row would be stored in multiple segments. The computation engine should match this read/write throughput limits to avoid underutilization. Therefore, a systolic array of size K × M would be enough to sustain the input/output bandwidth, assuming that we can read K words and write M words in each cycle.
 
 The figure below depicts a 3×3 systolic array used to compute in tiles the fused product of a GCN layer with I = 9 input features and O = 6 output features per node, respectively. Even if the computation evolves in more steps to facilitate the limited input-output bandwidth, the basic rule of the operation of FusedGCN does not change: one output row is first fully computed before moving to the next one.
-<img src="images/tiled-systolic.jpg" alt="Tiled systolic" style="align: left; width: 500px; height: auto;" />
+
+ <img src="images/tiled-systolic.jpg" alt="Tiled systolic" style="align: left; width: 500px; height: auto;" />
 
 Tiled computation shown previously can be expressed in a loop structure as follows.
 ```c++
