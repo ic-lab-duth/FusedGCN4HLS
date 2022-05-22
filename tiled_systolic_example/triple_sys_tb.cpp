@@ -1,3 +1,6 @@
+// Copyright 2022 Democritus University of Thrace
+// Integrated Circuits Lab
+// 
 #include <iostream>
 #include <iomanip>
 #include <stdio.h>
@@ -6,9 +9,6 @@
 #include <sstream>
 #include <string>
 
-#include <vector>
-#include <cstdlib>
-#include <ctime>
 
 #include "defs.h"
 #include "triple_sys.h"
@@ -16,9 +16,10 @@
 #include "mc_scverify.h"
 
 
+
 CCS_MAIN(int argc, char** argv) {
 
-  triple_sys< btype, K, M, I_B, O_B, MEM > sys_array;
+  triple_sys< btype, N, I_F, O_F1, O_F2, nZ, K, M, I_B, O_B, MEM > gcn;
 
   // number of vertical and horizontal tiles of weight matrix for the first layer
   const int ver = ((I_F%K)==0) ? (I_F/K) : (I_F/K)+1;
@@ -28,28 +29,51 @@ CCS_MAIN(int argc, char** argv) {
   const int ver2 = ((O_F1%K)==0) ? (O_F1/K) : (O_F1/K)+1;
   const int hor2 = ((O_F2%M)==0) ? (O_F2/M) : (O_F2/M)+1;
   
+#ifdef __SCVERIFY__
+  Matrix<btype> final(N, O_F2);
+  Matrix<btype> h(N, I_F);
+  Matrix<float> H(N, I_F);
+  Matrix<float> w1(I_F, O_F1);
+  Matrix<float> w2(O_F1, O_F2);
+  Array< int > A_row(N+1);
+  Array< int > A_col(nZ);
+  Array< btype > A_val(nZ);
+  Array< ac_int<32, false> > a_row(N+1);
+  Array< ac_int<32, false> > a_col(nZ);
+  Array< btype > a_val(nZ);
+#else
+  btype final2[N*O_F2];
+  btype h2[N*I_F];
+  float H_[N*I_F];
+  float w1_[I_F*O_F1];
+  float w2_[O_F1*O_F2];
+  int A_row_[N+1];
+  int A_col_[nZ];
+  btype A_val_[nZ];
+  ac_int<32, false> a_row2[N+1];
+  ac_int<32, false> a_col2[nZ];
+  btype a_val2[nZ];
 
-  btype h_o[N][O_F1];
-  btype final[N][O_F2];
+  Matrix<float> H(N, I_F, H_);
+  Matrix<float> w1(I_F, O_F1, w1_);
+  Matrix<float> w2(O_F1, O_F2, w2_);
+  Array< int > A_row(N+1, A_row_);
+  Array< int > A_col(nZ, A_col_);
+  Array< btype > A_val(nZ, A_val_);
+#endif
 
-  ac_channel<btype> loadW[K];
-  
-  std::vector<int> a_row;
-  std::vector<int> a_col;
-  std::vector<float> a_val;
-  std::vector< std::vector<float> > h;
-  std::vector< std::vector<float> > w1;
-  std::vector< std::vector<float> > w2;
+  ac_channel<btype> loadW1[K];
+  ac_channel<btype> loadW2[K];
+
 
   // read input matrices from txt files
-  read_adj<float, N, nZ>(a_row, a_col, a_val, "../matrices/citeseer_adj.txt");
-  read_data<float, N, I_F>(h, "../matrices/citeseer_feat.txt");
+  read_adj<float, N, nZ>(A_row, A_col, A_val, "../matrices/citeseer_adj.txt");
+  read_data<float, N, I_F>(H, "../matrices/citeseer_feat.txt");
   read_data<float, I_F, O_F1>(w1, "../matrices/citeseer_weights.txt");
   read_data<float, O_F1, O_F2>(w2, "../matrices/citeseer_weights2.txt");
 
 
   // first GCN layer
-  std::cout << "Executing first GCN layer..." << std::endl;
   int part_K = K;
   int part_M = M;
   
@@ -73,7 +97,7 @@ CCS_MAIN(int argc, char** argv) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
             if (j < part_M) {
-              loadW[i].write(w1[(p*K)+i][(q*M)+j]);
+              loadW1[i].write(w1[(p*K)+i][(q*M)+j]);
             }
           }
         }
@@ -81,62 +105,7 @@ CCS_MAIN(int argc, char** argv) {
     }
   }
   
-
-  //initialize output
-  for (int i=0; i < N; i++) {
-    for (int j=0; j < O_F1; j++) {
-      h_o[i][j] = (btype)0;
-    }
-  }
-
-  bool change_row;
-  bool last_layer = false;
-  bool apply_activation;
-  
-  int lambda;
-  btype a_lambda;
-
-  btype in_row[I_B];
-  btype out_row[O_B];
-
-  // load weights to PEs
-  sys_array.systolic_top(a_lambda, in_row, loadW, out_row, I_F, O_F1, ver, hor, true, true, false, false);
-
-  // push different tiles in the systolic array
-  ITER: for (int i=0; i < N; i++) {
-    change_row = true;
-
-    INTER_ROW_ITER: for (int j=a_row[i]; j < a_row[i+1]; j++) {
-      lambda = a_col[j];
-      a_lambda = a_val[j];
-      
-      for (int k=0; k < I_B; k++) {
-        if (k < I_F)
-          in_row[k] = h[lambda][k];
-        else
-          in_row[k] = (btype)0;
-      }
-      
-      if(j==a_row[i+1]-1)
-        apply_activation = true;
-
-      sys_array.systolic_top(a_lambda, in_row, loadW, out_row, I_F, O_F1, ver, hor, false, change_row, last_layer, apply_activation);
-      change_row = false;
-      apply_activation = false;
-
-    }
-    
-    WR_OUT: for (int j=0; j < O_F1; j++) {
-      // write the output
-      h_o[i][j] = out_row[j];
-    }
-    
-  }
-
-  std::cout << "===========================================" <<std::endl;
-
   // second GCN layer
-  std::cout << "Executing second GCN layer..." << std::endl;
   
   // write weights to appropriate channels to store correct in each PE
   for (int p=0; p < ver2; p++) {
@@ -158,60 +127,70 @@ CCS_MAIN(int argc, char** argv) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
             if (j < part_M) {
-              loadW[i].write(w2[(p*K)+i][(q*M)+j]);
+              loadW2[i].write(w2[(p*K)+i][(q*M)+j]);
             }
           }
         }
       }
     }
   }
-  
 
+#ifdef __SCVERIFY__
   //initialize output
   for (int i=0; i < N; i++) {
     for (int j=0; j < O_F2; j++) {
       final[i][j] = (btype)0;
     }
   }
-
-  last_layer = true;
-
-  // load weights to PEs
-  sys_array.systolic_top(a_lambda, in_row, loadW, out_row, O_F1, O_F2, ver, hor, true, true, false, false);
-
-  // push different tiles in the systolic array
-  ITER_2: for (int i=0; i < N; i++) {
-    change_row = true;
-
-    INTER_ROW_ITER_2: for (int j=a_row[i]; j < a_row[i+1]; j++) {
-      lambda = a_col[j];
-      a_lambda = a_val[j];
-      
-      for (int k=0; k < I_B; k++) {
-        if (k < O_F1)
-          in_row[k] = h_o[lambda][k];
-        else
-          in_row[k] = (btype)0;
-      }
-
-      if(j==a_row[i+1]-1)
-        apply_activation = true;
-
-      sys_array.systolic_top(a_lambda, in_row, loadW, out_row, O_F1, O_F2, ver, hor, false, change_row, last_layer, apply_activation);
-      change_row = false;
-      apply_activation = false;
-
+#else
+  for (int i=0; i < N; i++) {
+    for (int j=0; j < O_F2; j++) {
+      final2[i*O_F2 + j] = (btype)0;
     }
-    
-    WR_OUT_2: for (int j=0; j < O_F2; j++) {
-      // write the output
-      final[i][j] = out_row[j];
-    }
-    
+  }
+#endif
+
+#ifdef __SCVERIFY__
+  for (int i=0; i < N+1; i++) {
+    a_row[0][i] = A_row[0][i];
   }
 
-  std::cout << "===========================================" <<std::endl;
+  for (int i=0; i < nZ; i++) {
+    a_col[0][i] = A_col[0][i];
+    a_val[0][i] = (btype)A_val[0][i];
+  }
+#else
+  for (int i=0; i < N+1; i++) {
+    a_row2[i] = A_row[0][i];
+  }
 
+  for (int i=0; i < nZ; i++) {
+    a_col2[i] = A_col[0][i];
+    a_val2[i] = (btype)A_val[0][i];
+  }
+#endif
+
+#ifdef __SCVERIFY__
+  for (int i=0; i < N; i++) {
+    for (int j=0; j < I_F; j++) {
+      h[i][j] = H[i][j];
+    }
+  }
+#else
+  for (int i=0; i < N; i++) {
+    for (int j=0; j < I_F; j++) {
+      h2[i*I_F + j] = H[i][j];
+    }
+  }
+#endif
+
+#ifdef __SCVERIFY__
+  gcn.run(a_row, a_col, a_val, h, loadW1, loadW2, final);
+#else
+  gcn.run(a_row2, a_col2, a_val2, h2, loadW1, loadW2, final2);
+#endif
+
+  std::cout << "==========================" << std::endl;
   std::cout << "END!!!!" << std::endl;
 
   CCS_RETURN(0);

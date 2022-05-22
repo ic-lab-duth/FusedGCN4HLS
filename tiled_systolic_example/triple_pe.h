@@ -1,3 +1,6 @@
+// Copyright 2022 Democritus University of Thrace
+// Integrated Circuits Lab
+// 
 #ifndef _TRIPLE_PE_H
 #define _TRIPLE_PE_H
 
@@ -11,8 +14,7 @@ class PE{
     T local_w[MEM];  // local weight memory
 
   public:
-    PE(){
-    }
+    PE(){}
     
     // This function represents the functionality of each PE
     void compute(T a, T c_in, T &out, int r_ptr, int c_ptr, const int num_h_tiles, bool write_en) {

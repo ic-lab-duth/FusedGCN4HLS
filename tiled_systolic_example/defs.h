@@ -1,11 +1,14 @@
+// Copyright 2022 Democritus University of Thrace
+// Integrated Circuits Lab
+// 
 #ifndef _DEFS_H
 #define _DEFS_H
 
 #include "fast_float.h"
 #include "ac_channel.h"
+#include "matrix.h"
 #include "mc_scverify.h"
 
-typedef float dtype;
 typedef ffp16b btype;
 
 // size of the problem (matrix dimensions)
@@ -38,7 +41,7 @@ static const int nZ = 108365;  // number of non-zero values of adjacency
 static const int K = 16;
 static const int M = 16;
 
-// size of iput and output buffer
+// size of input and output buffer
 static const int I_B = 32;
 static const int O_B = 32;
 
