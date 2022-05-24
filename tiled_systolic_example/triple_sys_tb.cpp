@@ -43,9 +43,6 @@ CCS_MAIN(int argc, char** argv) {
   
   float* H = new float[N*I_F];
   
-  Matrix<float> w1(I_F, O_F1, w1_);
-  Matrix<float> w2(O_F1, O_F2, w2_);  
-
   ac_channel<btype> loadW1[K];
   ac_channel<btype> loadW2[K];
 
@@ -53,9 +50,11 @@ CCS_MAIN(int argc, char** argv) {
   // read input matrices from txt files
   read_adj<float, N, nZ>(A_row, A_col, A_val, "../matrices/citeseer_adj.txt");
   read_data<float, N, I_F>(H, "../matrices/citeseer_feat.txt");
-  read_data<float, I_F, O_F1>(w1, "../matrices/citeseer_weights.txt");
-  read_data<float, O_F1, O_F2>(w2, "../matrices/citeseer_weights2.txt");
-
+  read_data<float, I_F, O_F1>(w1_, "../matrices/citeseer_weights.txt");
+  read_data<float, O_F1, O_F2>(w2_, "../matrices/citeseer_weights2.txt");
+  
+  Matrix<float> w1(I_F, O_F1, w1_);
+  Matrix<float> w2(O_F1, O_F2, w2_);
 
   // first GCN layer
   int part_K = K;
