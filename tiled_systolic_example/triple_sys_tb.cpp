@@ -124,6 +124,7 @@ CCS_MAIN(int argc, char** argv) {
   
   for (int i=0; i < nZ; i++) {
     a_col[i] = A_col[i];
+    a_val[i] = A_val[i];
   }
   
   for (int i=0; i < N*I_F; i++) {
