@@ -37,6 +37,12 @@ CCS_MAIN(int argc, char** argv) {
   ac_int<32, false>* a_col = new ac_int<32, false>[nZ];
   btype* a_val = new btype[nZ];
   
+  int* A_row = new int[N+1];
+  int* A_col = new int[nZ];
+  float* A_val = new float[nZ];
+  
+  float* H = new float[N*I_F];
+  
   Matrix<float> w1(I_F, O_F1, w1_);
   Matrix<float> w2(O_F1, O_F2, w2_);  
 
@@ -111,6 +117,18 @@ CCS_MAIN(int argc, char** argv) {
         }
       }
     }
+  }
+  
+  for (int i=0; i < N+1; i++) {
+    a_row[i] = A_row[i];
+  }
+  
+  for (int i=0; i < nZ; i++) {
+    a_col[i] = A_col[i];
+  }
+  
+  for (int i=0; i < N*I_F; i++) {
+    h[i] = H[i];
   }
 
   //initialize output
