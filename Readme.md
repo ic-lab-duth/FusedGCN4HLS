@@ -99,21 +99,17 @@ All the examples implement a 2-layer GCN using the ReLU activation function for 
 
 # Reference
 
-FusedGCN will be presented in IEEE International Conference on Application-specific Systems, Architectures and Processors, Jul. 2022. To cite this work please use:
+FusedGCN will be presented in IEEE International Conference on Application-specific Systems, Architectures and Processors, July 2022. 
+The relevant paper will be available here shortly. To cite this work please use:
 
 ```
 @inproceedings{FusedGCN,
 author={C. {Peltekis} and D. {Filippas} and C. {Nicopoulos} and G. {Dimitrakopoulos}},
-booktitle={2022 IEEE International Conference on Application-specific Systems, Architectures and Processors (ASAP)},
-title={Fused{GCN}: {A} {S}ystolic {T}hree-{M}atrix {M}ultiplication {A}rchitecture for {G}raph {C}onvolutional {N}etworks},
-year={2022},
-volume={},
-number={},
-pages={},
-}
+booktitle={IEEE International Conference on Application-specific Systems, Architectures and Processors (ASAP)},
+title={Fused{GCN}: {A} {S}ystolic {T}hree-{M}atrix {M}ultiplication 
+{A}rchitecture for {G}raph {C}onvolutional {N}etworks},
+year={2022}}
 ```
-
-
 
 # License
 
