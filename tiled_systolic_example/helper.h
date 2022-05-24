@@ -44,7 +44,7 @@ void print2d (Matrix<btype> &a) {
 
 
 template<typename Type, int N, int L>
-void read_data(Matrix<Type> &img, std::string filename) {
+void read_data(Type img[N*L], std::string filename) {
   std::ifstream myFile(filename);
   if(myFile.is_open()) { //throw std::runtime_error("Could not open file");  // Make sure the file is open
 
@@ -60,7 +60,7 @@ void read_data(Matrix<Type> &img, std::string filename) {
 
       // Extract each integer
       while(ss >> val){
-        img[rowIdx][colIdx] = val;  // Write current input value
+        img[rowIdx*L + colIdx] = val;  // Write current input value
         if(ss.peek() == ',') ss.ignore(); // If the next token is a comma, ignore it and move on
 
         colIdx++;  // Increment the Column index
@@ -75,7 +75,7 @@ void read_data(Matrix<Type> &img, std::string filename) {
 
 
 template<typename Type, int N, int nZ>
-void read_adj(Array<int> &a_row, Array<int> &a_col, Array<Type> &a_val, std::string filename) {
+void read_adj(int a_row[N+1], int a_col[nZ], Type a_val[nZ], std::string filename) {
   std::ifstream myFile(filename);
   if(myFile.is_open()) { //throw std::runtime_error("Could not open file");  // Make sure the file is open
 
@@ -91,7 +91,7 @@ void read_adj(Array<int> &a_row, Array<int> &a_col, Array<Type> &a_val, std::str
 
     // Extract each integer
     while(ss1 >> int_val){
-      a_row[colIdx][0] = int_val;
+      a_row[colIdx] = int_val;
       if(ss1.peek() == ',') ss1.ignore(); // If the next token is a comma, ignore it and move on
       colIdx++;  // Increment the Column index
     }
@@ -103,7 +103,7 @@ void read_adj(Array<int> &a_row, Array<int> &a_col, Array<Type> &a_val, std::str
 
     // Extract each integer
     while(ss2 >> int_val){
-      a_col[colIdx][0] = int_val;
+      a_col[colIdx] = int_val;
       if(ss2.peek() == ',') ss2.ignore(); // If the next token is a comma, ignore it and move on
       colIdx++;  // Increment the Column index
     }
@@ -115,7 +115,7 @@ void read_adj(Array<int> &a_row, Array<int> &a_col, Array<Type> &a_val, std::str
 
     // Extract each integer
     while(ss3 >> def_val){
-      a_col[colIdx][0] = def_val;
+      a_col[colIdx] = def_val;
       if(ss3.peek() == ',') ss3.ignore(); // If the next token is a comma, ignore it and move on
       colIdx++;  // Increment the Column index
     }
