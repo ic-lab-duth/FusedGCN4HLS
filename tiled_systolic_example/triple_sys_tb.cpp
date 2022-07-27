@@ -40,6 +40,10 @@ CCS_MAIN(int argc, char** argv) {
   int* A_row = new int[N+1];
   int* A_col = new int[nZ];
   float* A_val = new float[nZ];
+
+  int* H_row = new int[N+1];
+  int* H_col = new int[feat_nZ];
+  float* H_val = new float[feat_nZ];
   
   float* H = new float[N*I_F];
   
@@ -48,18 +52,21 @@ CCS_MAIN(int argc, char** argv) {
 
 
   // read input matrices from txt files
-  read_adj<float, N, nZ>(A_row, A_col, A_val, "../matrices/citeseer_adj.txt");
-  read_data<float, N, I_F>(H, "../matrices/citeseer_feat.txt");
-  read_data<float, I_F, O_F1>(w1_, "../matrices/citeseer_weights.txt");
-  read_data<float, O_F1, O_F2>(w2_, "../matrices/citeseer_weights2.txt");
+  read_csr<float, N, nZ>(A_row, A_col, A_val, "./matrices/citeseer_adj.txt");
+  read_csr<float, N, feat_nZ>(H_row, H_col, H_val, "./matrices/citeseer_feat.txt");
+  read_data<float, I_F, O_F1>(w1_, "./matrices/citeseer_weights.txt");
+  read_data<float, O_F1, O_F2>(w2_, "./workspace/matrices/citeseer_weights2.txt");
   
   Matrix<float> w1(I_F, O_F1, w1_);
   Matrix<float> w2(O_F1, O_F2, w2_);
 
+  to_array<float, N, I_F, feat_nZ>(H_row, H_col, H_val, H);
+
+
   // first GCN layer
   int part_K = K;
   int part_M = M;
-  
+
   // write weights to appropriate channels to store correct in each PE
   for (int p=0; p < ver; p++) {
     if ((p+1)*K < I_F) {
@@ -67,15 +74,15 @@ CCS_MAIN(int argc, char** argv) {
     } else {
       part_K = K - ((p+1)*K - I_F);
     }
-    
+
     for (int q=0; q < hor; q++) {
       if ((q+1)*M < O_F1) {
         part_M = M;
       } else {
         part_M = M - ((q+1)*M - O_F1);
-      }      
-      
-      
+      }
+
+
       for (int i=0; i < K; i++) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
@@ -87,9 +94,9 @@ CCS_MAIN(int argc, char** argv) {
       }
     }
   }
-  
+
   // second GCN layer
-  
+
   // write weights to appropriate channels to store correct in each PE
   for (int p=0; p < ver2; p++) {
     if ((p+1)*K < O_F1) {
@@ -97,15 +104,15 @@ CCS_MAIN(int argc, char** argv) {
     } else {
       part_K = K - ((p+1)*K - O_F1);
     }
-    
+
     for (int q=0; q < hor2; q++) {
       if ((q+1)*M < O_F2) {
         part_M = M;
       } else {
         part_M = M - ((q+1)*M - O_F2);
-      }      
-      
-      
+      }
+
+
       for (int i=0; i < K; i++) {
         if (i < part_K) {
           for (int j=0; j < M; j++) {
@@ -117,16 +124,16 @@ CCS_MAIN(int argc, char** argv) {
       }
     }
   }
-  
+
   for (int i=0; i < N+1; i++) {
     a_row[i] = A_row[i];
   }
-  
+
   for (int i=0; i < nZ; i++) {
     a_col[i] = A_col[i];
     a_val[i] = A_val[i];
   }
-  
+
   for (int i=0; i < N*I_F; i++) {
     h[i] = H[i];
   }

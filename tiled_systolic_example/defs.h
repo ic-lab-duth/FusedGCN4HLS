@@ -12,13 +12,15 @@
 typedef ffp16b btype;
 
 // size of the problem (matrix dimensions)
+
 /*
 // for cora dataset
 static const int N = 2708;  // number of nodes
 static const int I_F = 1433;  // number of input features
 static const int O_F1 = 64;  // number of features in the hidden layer
 static const int O_F2 = 7;  // number of output features
-static const int nZ = 13264;  // number of non-zero values of adjacency
+static const int nZ = 13264;  // number of non-zero values of adjacency matrix
+static const int feat_nZ = 49216;  // number of non-zero values of feature matrix
 */
 
 // for citeseer dataset
@@ -26,7 +28,8 @@ static const int N = 3327;  // number of nodes
 static const int I_F = 3703;  // number of input features
 static const int O_F1 = 21;  // number of features in the hidden layer
 static const int O_F2 = 6;  // number of output features
-static const int nZ = 12431;  // number of non-zero values of adjacency
+static const int nZ = 12431;  // number of non-zero values of adjacency matrix
+static const int feat_nZ = 105165;  // number of non-zero values of feature matrix
 
 /*
 // for pubmed dataset
@@ -34,7 +37,8 @@ static const int N = 19717;  // number of nodes
 static const int I_F = 500;  // number of input features
 static const int O_F1 = 18;  // number of features in the hidden layer
 static const int O_F2 = 3;  // number of output features
-static const int nZ = 108365;  // number of non-zero values of adjacency 
+static const int nZ = 108365;  // number of non-zero values of adjacency matrix
+static const int feat_nZ = 988031;  // number of non-zero values of feature matrix
 */
 
 // systolic array size

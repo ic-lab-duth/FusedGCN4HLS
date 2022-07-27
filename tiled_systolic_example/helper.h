@@ -57,7 +57,6 @@ void read_data(Type img[N*L], std::string filename) {
       std::stringstream ss(line);  // Create a stringstream of the current line
       int colIdx = 0;  // Keep track of the current column index
 
-
       // Extract each integer
       while(ss >> val){
         img[rowIdx*L + colIdx] = val;  // Write current input value
@@ -70,12 +69,14 @@ void read_data(Type img[N*L], std::string filename) {
       if (rowIdx == N) break;
     }
     myFile.close();  // Close file
+  } else {
+    std::cout << "WRONG!!!!" << std::endl;
   }
 }
 
 
 template<typename Type, int N, int nZ>
-void read_adj(int a_row[N+1], int a_col[nZ], Type a_val[nZ], std::string filename) {
+void read_csr(int a_row[N+1], int a_col[nZ], Type a_val[nZ], std::string filename) {
   std::ifstream myFile(filename);
   if(myFile.is_open()) { //throw std::runtime_error("Could not open file");  // Make sure the file is open
 
@@ -115,11 +116,38 @@ void read_adj(int a_row[N+1], int a_col[nZ], Type a_val[nZ], std::string filenam
 
     // Extract each integer
     while(ss3 >> def_val){
-      a_col[colIdx] = def_val;
+      a_val[colIdx] = def_val;
       if(ss3.peek() == ',') ss3.ignore(); // If the next token is a comma, ignore it and move on
       colIdx++;  // Increment the Column index
     }
 
     myFile.close();  // Close file
+  } else {
+    std::cout << "WRONG!!!!" << std::endl;
+  }
+}
+
+template< typename T, int N, int M, int nZ >
+void to_array(int row[N+1], int col[nZ], T val[nZ], T mat[N*M]) {
+  int cur_row = row[0];
+  int next_row;
+
+  for (int i=0; i < N; i++) {
+    next_row = row[i+1];
+
+    // zero-initialize the current row of output matrix
+    for (int j=0; j < M; j++) {
+      mat[i*M + j] = (T) 0;
+    }
+
+    for (int j=cur_row; j < next_row; j++) {
+      int cur_col = col[j];
+      T cur_val = val[j];
+
+      mat[i*M + cur_col] = cur_val;
+    }
+
+    cur_row = next_row;
+
   }
 }
