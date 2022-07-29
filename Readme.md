@@ -90,24 +90,21 @@ Downloading the needed header-only libraries can be done by running the provided
 All the examples implement a 2-layer GCN using the ReLU activation function for the hidden layer and a hard decision (maximum) function for the output layer.
 
 
-
 # Future Work
 
 * Hardware implementation of the softmax activation function
 
 
-
 # Reference
 
-FusedGCN will be presented in IEEE International Conference on Application-specific Systems, Architectures and Processors, July 2022. 
-The relevant paper will be available here shortly. To cite this work please use:
+FusedGCN was presented in IEEE International Conference on Application-specific Systems, Architectures and Processors, July 2022. You can find the paper [here](https://gdimitrak.github.io/papers/asap2022.pdf). To cite this work please use:
 
 ```
 @inproceedings{FusedGCN,
-author={C. {Peltekis} and D. {Filippas} and C. {Nicopoulos} and G. {Dimitrakopoulos}},
+author={C. Peltekis and D. Filippas and C. Nicopoulos and G. Dimitrakopoulos},
 booktitle={IEEE International Conference on Application-specific Systems, Architectures and Processors (ASAP)},
-title={Fused{GCN}: {A} {S}ystolic {T}hree-{M}atrix {M}ultiplication 
-{A}rchitecture for {G}raph {C}onvolutional {N}etworks},
+title={Fused{GCN}: A Systolic Three-Matrix Multiplication 
+Architecture for Graph Convolutional Networks},
 year={2022}}
 ```
 
